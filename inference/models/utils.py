@@ -48,7 +48,7 @@ def initialize_model(model='Conformer', model_args={}):
         model = None 
     return model
 
-def load_model(model_dir, **model_attributes):
+def load_model(**model_attributes):
     # Define paths for the weights and configuration files
     device = model_attributes['device']
     if model_attributes['model_name'].lower() == 'timit':

@@ -33,9 +33,8 @@ def get_model_prediction(embeddings, masks, **configuration):
     
     device = configuration['device']
     model_name = configuration["model_name"]
-    model_path = configuration["model_path"]
     
-    model = load_model(model_path, **configuration)
+    model = load_model(**configuration)
     
     model.eval()
     with torch.no_grad():

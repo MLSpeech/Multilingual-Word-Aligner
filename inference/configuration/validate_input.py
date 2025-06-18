@@ -10,17 +10,17 @@ import torch
 
 def get_input_parser():
     parser = argparse.ArgumentParser(description="Parser for MWA aligner, Input example can be found in .Readme")
-    parser.add_argument("--wav_input", type=str, default="Mwa/inference/examples/", \
+    parser.add_argument("--wav_input", type=str, default="/home/royweber/Mwa/inference/examples/", \
                         help="Wav input can be either file or folder with .wav files")
-    parser.add_argument("--transcript_input", type=str, default="Mwa/inference/examples/", \
+    parser.add_argument("--transcript_input", type=str, default="/home/royweber/Mwa/inference/examples/", \
                         help="Transcript input can be either file of .txt, .TextGrid or folder with .txt , .TextGrid files with same names as wav files")
     parser.add_argument("--language", type=str, choices=['ara', 'bel', 'bul', 'deu', 'ell', 'eng', 'fas', 'grc', 'ell', 'eng', 'heb', 'kaz', 'kir', 'lav', 'lit', 'mkd', 'mkd2', 'oss', 'pnt', 'pus', 'rus', 'srp', 'srp2', 'tur', 'uig'],\
                         default="eng", help="""language of the transcript, MMS anticipate english character, we use https://github.com/isi-nlp/uroman to transcribe other languages to MMS format \n
                         if your language is not supported in this list pay attention to convert transcription before to MMS text format, more explanation can be found here: https://huggingface.co/docs/transformers/en/model_doc/mms  \n
                         (Arabic, Belarusian, Bulgarian, English, German, Ancient Greek, Modern Greek, Pontic Greek, Hebrew, Kazakh, Kyrgyz, Latvian, Lithuanian, Macedonian, Ossetian, Persian, Russian, Serbian, Turkish, Ukrainian, Uyghur or Yiddish)
                         """, required = False)
-    parser.add_argument("--model_name", type=str, choices=["timit", "buckeye"], default="buckeye", help="Type of model to use")
-    parser.add_argument("--device", type=str, default="cuda:2", help="Running resource device name for torch.device(device)") #cpu
+    parser.add_argument("--model_name", type=str, choices=["timit", "buckeye"], default="timit", help="Type of model to use")
+    parser.add_argument("--device", type=str, default="cpu", help="Running resource device name for torch.device(device)") #cuda:2
     parser.add_argument("--output_folder", type=str, default='results', help="Output folder for graphs and .csv results")
     parser.add_argument("--no_graph", action='store_true', help="extract no graph of models")
     parser.add_argument("--no_csv", action='store_true', help="extract no csv for word timestamps")
