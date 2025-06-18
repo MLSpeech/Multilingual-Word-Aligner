@@ -1,0 +1,37 @@
+
+models_mapping:
+  timit:
+    unsupseg_ckpt: models/unsupSeg/pretrained_models/timit+_pretrained.ckpt
+    mms_repeat: 64
+    UnSupSeg_size: 64
+    C: 3
+    max_tolerence: 1
+    penalty_gap: 4
+    dp_features: ["score_frame.feature_word","mms_emission_score","score_word.feature_word","distance_score"]
+    model_type: "conformer"
+    sequence_size: 300
+    labels_per_input: 300
+    number_attention_heads: 12
+    conformer_blocks: 16
+    kernel_size: 7
+    w: [0.9716978073120117,2.1716761589050293,0.252008318901062,-0.5364229679107666]
+    dp_times_in_second: 100
+    fc_size: 128
+
+  buckeye:
+    unsupseg_ckpt: models/unsupSeg/pretrained_models/buckeye+_pretrained.ckpt
+    mms_repeat: 128
+    UnSupSeg_size: 128
+    C: 3
+    max_tolerence: 1
+    penalty_gap: 4
+    dp_features: ["score_frame.feature_word","mms_emission_score","score_word.feature_word","distance_score"]
+    model_type: "conformer"
+    sequence_size: 300
+    labels_per_input: 300
+    number_attention_heads: 12
+    conformer_blocks: 16
+    kernel_size: 7
+    w: [0.8275507092475891,1.26473867893219,-0.06493306159973145,-0.060126736760139465]
+    dp_times_in_second: 100
+    fc_size: 256

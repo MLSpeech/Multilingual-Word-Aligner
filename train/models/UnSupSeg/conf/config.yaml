@@ -1,0 +1,49 @@
+
+
+# libri_subset: train-clean-100
+# libri_percent: 1.0
+buckeye_percent: 1.0
+val_ratio: 0.1  # ratio of validation set
+data: timit # TODO : maybe need to change to buckeye when needed? 
+dataloader_n_workers: 2 #4 #1 #4 #10
+
+# MODEL
+cosine_coef: 1.0  # cosine similarity coefficient
+z_proj: 64  # size of projection
+z_proj_linear: true
+z_proj_dropout: 0
+z_dim: 256
+pred_steps: 1  # number of future prediction steps - rotem
+#pred_steps: 3  # number of future prediction steps
+pred_offset: 0  # offset of future prediction steps
+batch_shuffle: false  # if 'false' negative samples will be from the same utterance, if 'true' may be from different utterances
+latent_dim: 0  # latent dimension of encoder
+n_negatives: 1  # number of negative samples for contrastive loss
+#n_negatives: 3  # number of negative samples for contrastive loss - rotem
+
+# MISC
+gpus: 1 
+tag: default
+exp_name: default
+project: unsupervised_segmentor
+
+# TODO: NEED TO CHANGE IT SO THE PARSER FROM THE COMMAND LINE WILL UPDATE THE CONFIG TO THE WANTED VALUE AND NO NEED TO CHANGE MANUALLY
+# ----------------------------------------------------
+
+dev_run: false  # fast debug run
+val_check_interval: 0.2  # how often a validation epoch is run
+overfit_pct: 1
+seed: 100
+early_stop_metric: val_max_rval
+early_stop_mode: max
+early_stop_patience: 5
+
+# OPTIMIZATION
+optimizer: adam # optimizer can be: adam , sgd , ranger
+momentum: 0.9
+lr: 0.0002
+lr_anneal_gamma: 1.0
+lr_anneal_step: 1000
+epochs: 200
+grad_clip: 0.5
+batch_size: 8 #4 
