@@ -28,14 +28,14 @@ pip install -r requirements.txt
 ### Run:
 ```bash
 Input example:
-python align_wav.py --wav_input "your_folder/Mwat/examples/" --transcript_input "your_folder/Mwat/examples/" --language "eng" --model_name "timit" --device "cuda:2" --output_folder "results"
+python align_wav.py --wav_input "your_folder/Mwa/examples/" --transcript_input "your_folder/Mwa/examples/" --language "eng" --model_name "timit" --device "cuda:2" --output_folder "results"
 
 Or:
-python align_wav.py --wav_input "your_folder/Mwat/examples/english.wav" --transcript_input "your_folder/Mwat/examples/english.txt" --language "eng" --model_name "buckeye" --output_folder "results"
-python align_wav.py --wav_input "your_folder/Mwat/examples/english.wav" --transcript_input "your_folder/Mwat/examples/english.TextGrid" --language "eng" --model_name "timit" --device "cuda:2"
+python align_wav.py --wav_input "your_folder/Mwa/examples/english.wav" --transcript_input "your_folder/Mwa/examples/english.txt" --language "eng" --model_name "buckeye" --output_folder "results"
+python align_wav.py --wav_input "your_folder/Mwa/examples/english.wav" --transcript_input "your_folder/Mwa/examples/english.TextGrid" --language "eng" --model_name "timit" --device "cuda:2"
 
 Or:
-python align_wav.py --wav_input "your_folder/Mwat/examples/german.wav" --transcript_input "your_folder/Mwat/examples/german.txt" --language "deu" --model_name "timit" --output_folder "results"
+python align_wav.py --wav_input "your_folder/Mwa/examples/german.wav" --transcript_input "your_folder/Mwa/examples/german.txt" --language "deu" --model_name "timit" --output_folder "results"
 ```
 
 <!-- Licenses:
