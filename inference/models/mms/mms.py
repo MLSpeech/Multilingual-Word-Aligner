@@ -225,8 +225,8 @@ def get_mms_embeddings(speech_file, words, device='cpu', **mms_config):
         raise Exception(f'speech file {speech_file} failed for {e}')
 
 
-def extract_file_emissions_token(sentence, transcript_path, device):
-    wav_path = os.path.splitext(transcript_path)[0] + '.wav'
+def extract_file_emissions_token(sentence, transcript_path, device, wav_file):
+    wav_path = wav_file#os.path.splitext(transcript_path)[0] + '.wav'
     with_star = False  # Set to True if you want to use the 'star' option in the tokenizer
     waveform, transcript, model, tokenizer, words_len = prepare_data(wav_path, sentence, with_star, device)
     bundle = torchaudio.pipelines.MMS_FA

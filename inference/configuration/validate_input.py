@@ -21,7 +21,7 @@ def get_input_parser():
                         """, required = False)
     parser.add_argument("--model_name", type=str, choices=["timit", "buckeye"], default="timit", help="Type of model to use")
     parser.add_argument("--device", type=str, default="cpu", help="Running resource device name for torch.device(device)") #cuda:2
-    parser.add_argument("--output_folder", type=str, default='results', help="Output folder for graphs and .csv results")
+    parser.add_argument("--output_folder", type=str, default='', help="Output folder for graphs and .csv results")
     parser.add_argument("--no_graph", action='store_true', help="extract no graph of models")
     parser.add_argument("--no_csv", action='store_true', help="extract no csv for word timestamps")
 
@@ -41,6 +41,8 @@ class UserInput(BaseModel):
     
     @field_validator("output_folder", mode="after")
     def validate_output_folder(cls, output_folder):
+        if not len(output_folder):
+            raise ValueError("enter output_folder for results")
         if not os.path.exists(output_folder):
             print(f"output folder {output_folder} does not exist, creating folder.")
             os.makedirs(output_folder, exist_ok=True)

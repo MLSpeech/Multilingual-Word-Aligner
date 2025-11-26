@@ -33,6 +33,8 @@ def prepare_sentence(transcript_file, language='eng'):
                         \n of the following languages {available_languages}")
 
 def find_fit_transcript(wav_file, transcriptions):
+    if len(transcriptions) == 1:
+        return str(transcriptions[0])
     transcript_basename = wav_file.name[:-4]
     transcriptions_filtered = [i for i in transcriptions if i.name == transcript_basename+".txt" or i.name == transcript_basename+".TextGrid" ]
     if not len(transcriptions_filtered):

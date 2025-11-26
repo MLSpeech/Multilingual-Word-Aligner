@@ -58,7 +58,7 @@ def get_file_prediction(embeddings, masks, sentence,**configuration):
 
     masked_embeddings, probabilities, predictions = get_model_prediction(embeddings, masks, **configuration)
 
-    _, token_indices, emissions = extract_file_emissions_token(sentence=sentence, transcript_path=configuration['transcript_file'], device=configuration['device'])
+    _, token_indices, emissions = extract_file_emissions_token(sentence=sentence, transcript_path=configuration['transcript_file'], device=configuration['device'], wav_file=configuration['wav_file'])
 
     dp_predictions_times, _, _ = find_optimal_positions_with_penalty(len(masked_embeddings[0]), sentence.count(' ')+1, probabilities,
                             sentence, masked_embeddings[0].cpu(), token_indices, emissions, **configuration)
