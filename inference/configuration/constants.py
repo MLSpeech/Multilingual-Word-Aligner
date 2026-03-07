@@ -12,4 +12,7 @@ sys.path.append(INFERENCE_PART_DIR)
 
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.yaml")
 
+
 OUTPUT_DIR = os.path.join(INFERENCE_PART_DIR, 'results')
+AUDIO_SUFFIXES = ['.wav','.flac']
+TEXT_SUFFIXES = [".txt", ".TextGrid"]

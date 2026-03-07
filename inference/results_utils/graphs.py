@@ -165,7 +165,7 @@ def save_results_to_csv(sentence, dp_predictions_times, **configuration):
     words_end_times = list(np.array(dp_predictions_times)/configuration['dp_times_in_second'])
     words_start_times = [0]+words_end_times[:-1]
     results_df = pd.DataFrame(list(zip(sentence.split(), words_start_times, words_end_times)), columns=['Word', 'Start_Time', 'End_Time'])
-    results_csv_path = os.path.join(configuration['output_folder'], f"{Path(configuration['wav_file']).name[:-4]}.csv")
+    results_csv_path = os.path.join(configuration['output_folder'], f"{Path(configuration['wav_file']).stem}.csv")
     results_df.to_csv(results_csv_path, index=False)
 
 
