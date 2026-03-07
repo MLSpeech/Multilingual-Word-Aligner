@@ -27,9 +27,8 @@ Python3.11 environment for running ([conda](https://docs.conda.io/en/latest/)/pi
 
 ### conda
 ```
-conda create --name Mwa_venv --file requirements.txt python=3.11
+conda env create -f environment.yml
 conda activate Mwa_venv
-pip install -r requirements.txt
 ```
 
 ### python venv
