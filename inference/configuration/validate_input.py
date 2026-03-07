@@ -52,19 +52,24 @@ class UserInput(BaseModel):
     @field_validator("wav_input", mode="after")
     def validate_wav_input(cls, wav_input):
         path = Path(wav_input)
-        if not path.exists() or (path.is_file() and ".wav" not in wav_input):
+        if not path.exists():
             raise ValueError(f"Wav input does not exist: {wav_input}")
         if path.is_file():
+            if path.suffix not in AUDIO_SUFFIXES:
+                raise ValueError(f"Audio file must have one of these extensions: {AUDIO_SUFFIXES}")
             return [path]
         elif path.is_dir():
-            return sorted(p for p in path.rglob("*") if p.suffix in AUDIO_SUFFIXES)
+            files = sorted(p for p in path.rglob("*") if p.suffix in AUDIO_SUFFIXES)
+            if not files:
+                raise ValueError(f"No audio files found in directory with extensions: {AUDIO_SUFFIXES}")
+            return files
         else:
             raise ValueError(f"Invalid input format: {wav_input} check input again")
 
     @field_validator("transcript_input", mode="after")
     def validate_transcript_file(cls, transcript_input):
         path = Path(transcript_input)
-        if not path.exists() or (path.is_file() and any(s in transcript_input for s in TEXT_SUFFIXES)):
+        if not path.exists() or (path.is_file() and not any(s in transcript_input for s in TEXT_SUFFIXES)):
             raise ValueError(f"Transcript input does not exist: {transcript_input}")
         if path.is_file():
             return [path]

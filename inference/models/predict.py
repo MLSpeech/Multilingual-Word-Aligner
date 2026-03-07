@@ -29,12 +29,12 @@ def create_tensor_from_indices(y, masks, conf_model):
 
     return tensor
 
-def get_model_prediction(embeddings, masks, **configuration):
+def get_model_prediction(model, embeddings, masks, **configuration):
     
     device = configuration['device']
     model_name = configuration["model_name"]
     
-    model = load_model(**configuration)
+    # model = load_model(**configuration)
     
     model.eval()
     with torch.no_grad():
@@ -54,9 +54,9 @@ def get_model_prediction(embeddings, masks, **configuration):
 
 
 
-def get_file_prediction(embeddings, masks, sentence,**configuration):
+def get_file_prediction(model, embeddings, masks, sentence,**configuration):
 
-    masked_embeddings, probabilities, predictions = get_model_prediction(embeddings, masks, **configuration)
+    masked_embeddings, probabilities, predictions = get_model_prediction(model, embeddings, masks, **configuration)
 
     _, token_indices, emissions = extract_file_emissions_token(sentence=sentence, transcript_path=configuration['transcript_file'], device=configuration['device'], wav_file=configuration['wav_file'])
 
