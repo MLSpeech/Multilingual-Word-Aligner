@@ -4,6 +4,8 @@ import torch
 from inference.models.conformer.conformer import initialize_conformer, Conformer
 from praatio import textgrid
 import uroman as ur
+from pathlib import Path
+from inference.configuration.constants import TEXT_SUFFIXES
 
 def prepare_sentence(transcript_file, language='eng'):
     
@@ -35,10 +37,19 @@ def prepare_sentence(transcript_file, language='eng'):
 def find_fit_transcript(wav_file, transcriptions):
     if len(transcriptions) == 1:
         return str(transcriptions[0])
-    transcript_basename = wav_file.name[:-4]
-    transcriptions_filtered = [i for i in transcriptions if i.name == transcript_basename+".txt" or i.name == transcript_basename+".TextGrid" ]
+    
+    transcriptions_filtered = [
+        t for t in transcriptions
+        if t.stem == wav_file.stem and t.suffix in TEXT_SUFFIXES
+    ]
+    
     if not len(transcriptions_filtered):
         return ""
+    
+    if len(transcriptions_filtered)>1:
+        print(f"More than 1 file was found for {wav_file} skipping file")
+        return ""
+    
     transcript_file = str(transcriptions_filtered[0])
     return transcript_file
     

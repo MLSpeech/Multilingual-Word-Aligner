@@ -7,6 +7,7 @@ import argparse
 from inference.models.utils import prepare_sentence
 from pathlib import Path
 import torch
+from inference.configuration.constants import AUDIO_SUFFIXES, TEXT_SUFFIXES
 
 def get_input_parser():
     parser = argparse.ArgumentParser(description="Parser for MWA aligner, Input example can be found in .Readme")
@@ -56,19 +57,19 @@ class UserInput(BaseModel):
         if path.is_file():
             return [path]
         elif path.is_dir():
-            return sorted(p for p in path.iterdir() if p.suffix == ".wav")
+            return sorted(p for p in path.rglob("*") if p.suffix in AUDIO_SUFFIXES)
         else:
             raise ValueError(f"Invalid input format: {wav_input} check input again")
 
     @field_validator("transcript_input", mode="after")
     def validate_transcript_file(cls, transcript_input):
         path = Path(transcript_input)
-        if not path.exists() or (path.is_file() and ".txt" not in transcript_input and ".TextGrid" not in transcript_input):
+        if not path.exists() or (path.is_file() and any(s in transcript_input for s in TEXT_SUFFIXES)):
             raise ValueError(f"Transcript input does not exist: {transcript_input}")
         if path.is_file():
             return [path]
         elif path.is_dir():
-            return sorted(p for p in path.iterdir() if p.suffix == ".txt" or p.suffix == ".TextGrid")
+            return sorted(p for p in path.rglob("*") if p.suffix in TEXT_SUFFIXES)
         else:
             raise ValueError(f"Invalid input format: {transcript_input} check input again")
 
