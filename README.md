@@ -39,43 +39,24 @@ Windows - Mwa_venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-
-### User guide and examples:
-
-- Before running create audio-text files scheme with the following format with audio names matching transcript names
-```
-dataset/
-├── audio1.wav
-├── audio1.txt
-├── audio2.flac
-├── audio2.TextGrid
-├── audio3.wav
-├── audio2.txt
-...
-```
-- Text should be with one line containing the text seperated by " " or TextGrid with text tag (Example in inference/examples/english.TextGrid file)
-- Then check match audio language you want to align [supported langauges](https://huggingface.co/facebook/mms-1b-all#supported-languages)
-- Add resources with "--device"
-- Choose one of the models: 
-  - [timit](https://huggingface.co/MLSpeech/mwa-buckeye)
-  - [buckeye](https://huggingface.co/MLSpeech/mwa-timit)
-- Run Mwa to align your audio 
-
-- Code examples:
-
+# Basic Usage
+To align audio files in a directory, use the following command structure:
 ```bash
-Input example:
-python align_wav.py --wav_input "<wav_folder>" --transcript_input "<transcript_folder>" --language "eng" --model_name "timit" --device "cuda:2" --output_folder "results"
-
-Or:
-python align_wav.py --wav_input "your_folder/Mwa/examples/english.wav" --transcript_input "your_folder/Mwa/examples/english.txt" --language "eng" --model_name "buckeye" --output_folder "results"
-
-Or:
-python align_wav.py --wav_input "your_folder/Mwa/examples/english.wav" --transcript_input "your_folder/Mwa/examples/english.TextGrid" --language "eng" --model_name "timit" --device "cuda:2"
-
-Or:
-python align_wav.py --wav_input "your_folder/Mwa/examples/german.wav" --transcript_input "your_folder/Mwa/examples/german.txt" --language "deu" --model_name "timit" --output_folder "results"
+mwa align <model_name (timit/buckeye)> <language> --input_dir <input_dir> --output_dir <output_dir>
 ```
+Example:
+```bash
+mwa align timit eng --input_dir "/path/to/data/" --output_dir "./results"
+```
+
+Note: If language is not specified, it defaults to `eng`.
+
+# 📖 Documentation
+
+For detailed information on data preparation, supported languages, and advanced parameters, please refer to our:
+
+👉 [Detailed User Guide](user_guide.md)
+
 
 <!-- Licenses:
 ```bash
@@ -87,26 +68,6 @@ This is from Felix we need to
   year={2020}
 }
 ``` -->
-
-
-
-
-
-## MWA Usage
-
-Use align_wav.py --help for Further explanation
-
-| Argument                  | Type   | Description                                                                       
-| ---------------------     | ------ | ---------------------------------------------------------------------------------------------------------------------------------------  
-| `--wav_input`             | `str`  | 📂 Path to the folder containing `.wav/.flac` audio files or file with `.wav/.flac` posix.
-| `--transcript_input`      | `str`  | 📂 Path to the folder containing transcription files (e.g., `.txt/.TextGrid`, `.csv`). (or text file)
-| `--output_folder`         | `str`  | 📁 Directory where results will be saved. Folder will be created if it doesn't exist. In order to disable result extraction use --no_graph or --no_csv additional flags
-| `--language`              | `str`  | 🌍 Language code for processing. options {ara,bel,bul,deu,ell,eng,fas,grc,ell,eng,heb,kaz,kir,lav,lit,mkd,mkd2,oss,pnt,pus,rus,srp,srp2,tur,uig} Default: `eng`. For more information use --help flag.
-| `--model_name`            | `str`  | 🤖 timit/buckeye models are supported - timit model was trained on genre of spoken language and buckeye on fluent speech
-| `--device`                | `str`  | 🖥️ in case GPU resources are available you can use device name ("cuda:0")  to improve performances
-| `--no_graph, --no_csv`    | `str`  | 🐞 flags to disable file extraction in results
-
-
 
 
 ## Illustration

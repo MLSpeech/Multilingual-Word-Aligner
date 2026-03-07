@@ -54,3 +54,5 @@ dependencies:
     - colorlog==6.9.0
     - pipdeptree==2.26.1
     - nvidia-ml-py3  # Alternative to some nvidia packages
+    # This installs your local project as a command
+    - -e .

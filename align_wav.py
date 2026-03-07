@@ -29,7 +29,7 @@ def align():
     for wav_file in tqdm(configuration['wav_input'], desc="Processing", unit="file"):
         transcript_file = find_fit_transcript(wav_file, configuration['transcript_input'])
         if not len(transcript_file):
-            print(f"(!) no transcript found for wav file {str(wav_file)}, continue")
+            tqdm.write(f"(!) no transcript found for wav file {str(wav_file)}, continue")
             continue
 
         file_start = time.time()
