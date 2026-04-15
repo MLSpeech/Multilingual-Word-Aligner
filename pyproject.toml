@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mwa"
+version = "0.1.0"
+description = "MWA Multilingual Word Aligner"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [] 
+
+[project.scripts]
+mwa = "mwa_cli:main"
+
+[tool.setuptools]
+# This tells setuptools: "Only look at this one file, ignore the folders"
+py-modules = ["align_wav", "mwa_cli"]
+packages = ["inference", "train"]
