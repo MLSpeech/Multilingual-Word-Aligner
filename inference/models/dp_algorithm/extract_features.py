@@ -103,28 +103,42 @@ class Features_DP():
         for function_name in functions_to_run: 
             self.scores_statistics[function_name] = []
 
+    def _resolve_feature(self, function_name):
+        func_keys = function_name.split(".")
+        feature_object = Features_DP.features_name_mapping[func_keys[0]]
+        if len(func_keys) > 1:
+            feature_keys = feature_object.settings[func_keys[1]]
+        else:
+            feature_keys = feature_object.settings[list(feature_object.settings.keys())[0]]
+        return feature_object.score_function, feature_keys
+
     def run_functions(self, args_dict):
-        
-        score_obj = {'scores':[], 'names':[]}
+        score_obj = {'scores': [], 'names': []}
         for function_name in self.functions_to_run:
-            # start_batch= time.time()
-            func_keys = function_name.split(".")
-            feature_object = Features_DP.features_name_mapping[func_keys[0]]
-            if len(func_keys)>1:
-                feature_keys = feature_object.settings[func_keys[1]]
-            else:
-                feature_keys = feature_object.settings[list(feature_object.settings.keys())[0]]
+            fn, feature_keys = self._resolve_feature(function_name)
             try:
                 values = itemgetter(*feature_keys)(args_dict)
-                if type(values)!= tuple:
+                if not isinstance(values, tuple):
                     values = (values,)
             except Exception as e:
                 raise Exception(f'required keys dont fit the dictionary got dict of: {args_dict.keys()} and keys:{feature_keys} for {function_name} ')
-            score_for_function = feature_object.score_function(*values)
-            score_obj['scores'].append(score_for_function)
+            score_obj['scores'].append(fn(*values))
             score_obj['names'].append(function_name)
-                
         score_obj['scores'] = torch.tensor(score_obj['scores'])
         return score_obj
+
+    def run_functions_weighted(self, args_dict, w_floats):
+        """Compute weighted sum of feature scores directly, avoiding intermediate tensor allocation."""
+        total = 0.0
+        for i, function_name in enumerate(self.functions_to_run):
+            fn, feature_keys = self._resolve_feature(function_name)
+            try:
+                values = itemgetter(*feature_keys)(args_dict)
+                if not isinstance(values, tuple):
+                    values = (values,)
+            except Exception as e:
+                raise Exception(f'required keys dont fit the dictionary got dict of: {args_dict.keys()} and keys:{feature_keys} for {function_name} ')
+            total = total + w_floats[i] * fn(*values)
+        return total
 
 

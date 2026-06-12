@@ -1,0 +1,132 @@
+Speed Optimizations for Multilingual-Word-Aligner
+===================================================
+
+Round 1 — Model loading and structural bottlenecks
+---------------------------------------------------
+
+Optimization 1 — MMS model loaded once (was: twice per file)
+File: inference/models/mms/mms.py
+New function: load_mms_model(device, with_star=False) -> (bundle, model)
+
+The MMS_FA model was loaded inside prepare_data(), called from TWO paths
+per file: get_mms_embeddings() and extract_file_emissions_token(). Added
+load_mms_model(); align_wav.py calls it once before the file loop and stores
+(mms_bundle, mms_model) in the configuration dict. Both call sites accept them
+as optional kwargs and skip the reload if present.
+Impact: MMS loads 2N → 1 for N files.
+
+
+Optimization 2 — UnsupSeg model loaded once (was: once per file)
+File: inference/models/unsupSeg/unsupseg_classifier.py
+New function: load_unsupseg_model(ckpt_path, device) -> model
+
+get_unsupseg_embeddings() called torch.load() + model init on every file.
+Extracted load_unsupseg_model(); align_wav.py calls it once before the loop.
+get_unsupseg_embeddings() now accepts a model object or a path string.
+Also added missing torch.no_grad() around the UnsupSeg forward pass.
+Impact: UnsupSeg loads N → 1; eliminates gradient bookkeeping during inference.
+
+
+Optimization 3 — Vectorized DP distance computation (was: O(n) Python loop)
+File: inference/models/dp_algorithm/utils.py
+
+embedding_distance_by_tolerence() was called frame-by-frame in a Python loop:
+    for frame in range(0, n): distances_arr[frame] = f(embeddings, [frame], ...)
+Replaced with one batched call:
+    distances_arr = f(embeddings, list(range(n)), ...)
+Note: valid for max_tolerence=1 (both configs) where each frame always produces
+exactly 2 unique neighbor indices after clip. Result shape is (n,) directly.
+Impact: eliminates ~500 Python→Torch round trips per utterance.
+
+
+Optimization 4 — Uroman instance cached (was: per-call instantiation)
+File: inference/models/utils.py
+
+prepare_sentence() created ur.Uroman() on every call (called twice per file).
+Fix: module-level _uroman singleton, created on first call, reused thereafter.
+
+
+Round 2 — Remaining bottlenecks
+--------------------------------
+
+Optimization 5 — Waveform loaded from disk once per file (was: twice)
+Files: inference/models/mms/mms.py, inference/models/preprocess.py,
+       inference/models/predict.py
+
+prepare_data() called torchaudio.load() for both get_mms_embeddings() and
+extract_file_emissions_token() — two disk reads of the same file per utterance.
+Fix: prepare_dataset() now loads the waveform once and stores it in
+configuration['_waveform']. Both call sites receive it via the waveform=
+optional parameter and skip the torchaudio.load() when it is provided.
+Impact: eliminates one full waveform disk read (and audio decode) per file.
+
+
+Optimization 6 — Remove torch.cuda.empty_cache() called on every file
+File: inference/models/mms/mms.py
+
+torch.cuda.empty_cache() was called inside prepare_data() on every single
+file. This function synchronizes the CUDA stream and returns cached-but-free
+memory to the OS, but it cannot free memory held by live model tensors.
+During continuous inference the GPU memory footprint is stable, so the call
+was pure overhead (a synchronization barrier per file). Removed entirely.
+Impact: eliminates one CUDA sync per file.
+
+
+Optimization 7 — Eliminate tensor allocations in DP hot loop
+Files: inference/models/dp_algorithm/extract_features.py,
+       inference/models/dp_algorithm/utils.py, align_wav.py
+
+The DP inner loop called run_functions() per eligible frame, which:
+  a) built a Python list of 4 scores
+  b) called torch.tensor(list) to create a 4-element tensor
+  c) multiplied by the weight tensor and called .sum()
+
+For a 60s file with 50 words this runs ~290,000 times.
+Fixes:
+  • New run_functions_weighted(args, w_floats) accumulates a weighted sum
+    directly (w_floats is a plain Python list), bypassing list→tensor→multiply.
+  • The shared args_for_features dict is pre-built once per file and only the
+    three fields that change (start_end_indices, distance_score, word_number)
+    are mutated per iteration, eliminating dict construction overhead.
+  • Features_DP and w_floats are now pre-instantiated once in align_wav.py
+    before the file loop (stored in configuration['_dp_features_obj'] and
+    configuration['_w_floats']); previously they were re-created per file.
+  • Removed the now-redundant distances_arr = torch.zeros(n) that was
+    immediately overwritten by the vectorized distance call.
+Impact: significant reduction in Python overhead across the DP inner loop.
+
+
+Optimization 8 — Faster tensor construction in Conformer inference
+File: inference/models/predict.py
+
+    torch.tensor(np.array(embeddings), dtype=torch.float32)  # 2 copies
+    torch.tensor(np.array(masks))                             # 2 copies
+replaced with:
+    torch.as_tensor(embeddings, dtype=torch.float32)          # 0 copies*
+    torch.as_tensor(masks)
+(* when the array is already the right dtype and contiguous)
+Also: torch.no_grad() → torch.inference_mode() (disables view tracking, faster)
+and removed redundant model.eval() (model is already in eval from load_model).
+
+
+Optimization 9 — Unused imports removed
+Files: inference/models/mms/mms.py (IPython, matplotlib, torchaudio.functional,
+       os), inference/models/unsupSeg/unsupseg_classifier.py (argparse,
+       matplotlib, os, numpy). Dead helper functions (get_device, list_wav_files)
+       also removed from unsupseg_classifier.py.
+Impact: faster module import time.
+
+
+Summary table (N files, n frames per file, k words per file)
+-------------------------------------------------------------
+  Operation                       Before      After
+  ──────────────────────────────────────────────────────
+  MMS model load                  2N          1
+  UnsupSeg model load             N           1
+  Waveform disk reads             2N          N
+  CUDA empty_cache syncs          2N          0
+  DP distance function calls      N×n         N×1
+  DP score tensor allocations     N×(eligible frames)  0
+  Features_DP instantiation       N           1
+  Uroman instantiation            2N          1
+  torch.tensor copy (Conformer)   2 per file  0 per file
