@@ -1,6 +1,15 @@
 # MWA — Multilingual Word Aligner
 
-> State-of-the-art open-source speech–text word alignment for 25+ languages.
+> State-of-the-art open-source speech–text word alignment for 1000+ languages.
+
+## Citation
+
+If you use MWA in your research, please cite:
+
+**Multilingual Word-Level Forced Alignment with Self-Supervised Representations and Learned Dynamic Programming**  
+Roy Weber, Meidan Zehavi, Rotem Rousso, Joseph Keshet  
+*The 27th Annual Conference of the International Speech Communication Association (Interspeech), 2026*  
+[https://arxiv.org/abs/2606.10675](https://arxiv.org/abs/2606.10675)
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![PyTorch 2.4](https://img.shields.io/badge/PyTorch-2.4-ee4c2c.svg)](https://pytorch.org/)
@@ -15,8 +24,8 @@ precise start and end timestamp for every word. It works for read speech,
 conversational speech, and languages never seen during training.
 
 MWA outperforms all leading speech–text aligners on the TIMIT and Buckeye
-corpora. It also generalises out of the box to unseen languages including
-Hebrew, Dutch, and German.
+corpora. It also generalises out of the box to all 1000+ languages supported
+by Meta's MMS model, including Hebrew, Dutch, German, Arabic, and many more.
 
 ![Model performance comparison](inference/images/performance.png)
 
@@ -63,6 +72,10 @@ Audio + Transcript
 |---|---|---|---|
 | `timit` | [MLSpeech/mwa-timit](https://huggingface.co/MLSpeech/mwa-timit) | TIMIT corpus | Read / formal speech |
 | `buckeye` | [MLSpeech/mwa-buckeye](https://huggingface.co/MLSpeech/mwa-buckeye) | Buckeye corpus | Conversational / fluent speech |
+
+Both models were trained on American English corpora but leverage MMS-FA
+features, enabling alignment for all **1000+ languages** supported by MMS.
+See [Supported Languages](#supported-languages) below for the full list.
 
 Weights are downloaded automatically from HuggingFace on first use.
 
@@ -245,23 +258,13 @@ dataset/
 ## Supported Languages
 
 MWA uses [uroman](https://github.com/isi-nlp/uroman) to romanize non-Latin
-scripts before passing them to MMS. Use the ISO 639-3 code for `--language`:
+scripts before passing them to MMS. Use the ISO 639-3 code for `--language`.
 
-| Code | Language | Code | Language | Code | Language |
-|---|---|---|---|---|---|
-| `ara` | Arabic | `kaz` | Kazakh | `pus` | Pashto |
-| `bel` | Belarusian | `kir` | Kyrgyz | `rus` | Russian |
-| `bul` | Bulgarian | `lav` | Latvian | `srp` | Serbian |
-| `deu` | German | `lit` | Lithuanian | `srp2` | Serbian (variant) |
-| `ell` | Modern Greek | `mkd` | Macedonian | `tur` | Turkish |
-| `eng` | English | `mkd2` | Macedonian (variant) | `uig` | Uyghur |
-| `fas` | Persian (Farsi) | `oss` | Ossetian | | |
-| `grc` | Ancient Greek | `pnt` | Pontic Greek | | |
-| `heb` | Hebrew | | | | |
+MWA supports all **1000+ languages** covered by Meta's MMS model. For the
+full list of languages and their ISO 639-3 codes, see the official MMS
+language list:
 
-For a language not in this list, romanize your transcripts manually following
-the [MMS documentation](https://huggingface.co/docs/transformers/en/model_doc/mms)
-before running MWA.
+**[MMS supported languages and codes](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html)**
 
 ---
 
@@ -301,11 +304,3 @@ MWA builds on:
 - **MMS** — Pratap et al., *Scaling Speech Technology to 1,000+ Languages*, 2023. Facebook AI Research.  
 - **UnsupSeg** — Kreuk, Keshet & Adi, *Self-Supervised Contrastive Learning for Unsupervised Phoneme Segmentation*, Interspeech 2020.
 
-```bibtex
-@article{kreuk2020self,
-  title   = {Self-Supervised Contrastive Learning for Unsupervised Phoneme Segmentation},
-  author  = {Kreuk, Felix and Keshet, Joseph and Adi, Yossi},
-  journal = {arXiv preprint arXiv:2007.13465},
-  year    = {2020}
-}
-```
