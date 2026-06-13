@@ -19,6 +19,16 @@ Roy Weber, Meidan Zehavi, Rotem Rousso, Joseph Keshet
 *The 27th Annual Conference of the International Speech Communication Association (Interspeech), 2026*  
 [https://arxiv.org/abs/2606.10675](https://arxiv.org/abs/2606.10675)
 
+```bibtex
+@inproceedings{weber2026multilingual,
+  title     = {Multilingual Word-Level Forced Alignment with Self-Supervised Representations and Learned Dynamic Programming},
+  author    = {Weber, Roy and Zehavi, Meidan and Rousso, Rotem and Keshet, Joseph},
+  booktitle = {Proceedings of the 27th Annual Conference of the International Speech Communication Association (Interspeech)},
+  year      = {2026},
+  url       = {https://arxiv.org/abs/2606.10675}
+}
+```
+
 ---
 
 ## What is MWA?
