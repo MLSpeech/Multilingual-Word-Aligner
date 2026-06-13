@@ -8,7 +8,7 @@ from .next_frame_classifier import NextFrameClassifier
 
 def load_unsupseg_model(ckpt_path, device):
     """Load checkpoint and initialize model once; reuse across all files."""
-    ckpt = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
+    ckpt = torch.load(ckpt_path, map_location=lambda storage, loc: storage, weights_only=False)
     hp = Namespace(**dict(ckpt["hparams"]))
     model = NextFrameClassifier(hp).to(device)
     weights = {k.replace("NFC.", ""): v for k, v in ckpt["state_dict"].items()}
