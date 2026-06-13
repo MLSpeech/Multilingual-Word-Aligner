@@ -30,16 +30,13 @@ def create_tensor_from_indices(y, masks, conf_model):
     return tensor
 
 def get_model_prediction(model, embeddings, masks, **configuration):
-    
+
     device = configuration['device']
     model_name = configuration["model_name"]
-    
-    # model = load_model(**configuration)
-    
-    model.eval()
-    with torch.no_grad():
-        embedding_tensor = torch.tensor(np.array(embeddings), dtype=torch.float32).to(device) #shape: torch.Size([5, 80, 192])
-        masks_tensor = torch.tensor(np.array(masks)).to(device) #shape: torch.Size([5, 80])
+
+    with torch.inference_mode():
+        embedding_tensor = torch.as_tensor(embeddings, dtype=torch.float32).to(device)
+        masks_tensor = torch.as_tensor(masks).to(device)
         outputs = model(input_ids=embedding_tensor) #shape: torch.Size([5, 80, 1])
         if 'vgg' in model_name.lower():
             middle_index = embedding_tensor.shape[1] // 2
@@ -58,7 +55,13 @@ def get_file_prediction(model, embeddings, masks, sentence,**configuration):
 
     masked_embeddings, probabilities, predictions = get_model_prediction(model, embeddings, masks, **configuration)
 
-    _, token_indices, emissions = extract_file_emissions_token(sentence=sentence, transcript_path=configuration['transcript_file'], device=configuration['device'], wav_file=configuration['wav_file'])
+    _, token_indices, emissions = extract_file_emissions_token(
+        sentence=sentence, transcript_path=configuration['transcript_file'],
+        device=configuration['device'], wav_file=configuration['wav_file'],
+        mms_bundle=configuration.get('mms_bundle'),
+        mms_model=configuration.get('mms_model'),
+        waveform=configuration.get('_waveform'),
+    )
 
     dp_predictions_times, _, _ = find_optimal_positions_with_penalty(len(masked_embeddings[0]), sentence.count(' ')+1, probabilities,
                             sentence, masked_embeddings[0].cpu(), token_indices, emissions, **configuration)

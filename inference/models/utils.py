@@ -7,10 +7,16 @@ import uroman as ur
 from pathlib import Path
 from inference.configuration.constants import TEXT_SUFFIXES
 
+_uroman = None
+
+
 def prepare_sentence(transcript_file, language='eng'):
-    
+    global _uroman
+
     available_languages = ['ara', 'bel', 'bul', 'deu', 'ell', 'eng', 'fas', 'grc', 'ell', 'eng', 'heb', 'kaz', 'kir', 'lav', 'lit', 'mkd', 'mkd2', 'oss', 'pnt', 'pus', 'rus', 'srp', 'srp2', 'tur', 'uig']
-    uroman = ur.Uroman()
+    if _uroman is None:
+        _uroman = ur.Uroman()
+    uroman = _uroman
     if '.TextGrid' in transcript_file: 
         tg = textgrid.openTextgrid(transcript_file, includeEmptyIntervals=False)
         word_tier = tg._tierDict["sentence"]

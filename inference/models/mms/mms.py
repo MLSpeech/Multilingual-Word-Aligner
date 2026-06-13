@@ -1,9 +1,5 @@
 import torch
 import torchaudio
-import IPython
-import matplotlib.pyplot as plt
-import torchaudio.functional as F
-import os
 from dataclasses import dataclass
 from itertools import chain, islice
 from typing import Any, Dict, List
@@ -160,15 +156,22 @@ class ForceAligner(IAligner):
         return "".join(self.decoder[t] for t in tokens)
     
 
-# changed to get several files
-def prepare_data(speech_file: str, words: str, with_star: bool, device: torch.device) -> tuple[Tensor, str, torch.nn.Module, Dict[str, int]]:
-    torch.cuda.empty_cache()
-    waveform, _ = torchaudio.load(speech_file)
+def load_mms_model(device: torch.device, with_star: bool = False):
+    """Load MMS_FA bundle and model once; reuse across all files."""
     bundle = torchaudio.pipelines.MMS_FA
-    model = bundle.get_model(with_star)  # Load model on CPU first
-    model = model.to(device)  # Then move to GPU
+    model = bundle.get_model(with_star).to(device)
+    model.eval()
+    return bundle, model
+
+
+# changed to get several files
+def prepare_data(speech_file: str, words: str, with_star: bool, device: torch.device,
+                 bundle=None, model=None, waveform: Tensor = None) -> tuple[Tensor, str, torch.nn.Module, Dict[str, int]]:
+    if waveform is None:
+        waveform, _ = torchaudio.load(speech_file)
+    if bundle is None or model is None:
+        bundle, model = load_mms_model(device, with_star)
     tokenizer = bundle.get_tokenizer()
-    # Ignore empty lines
     words_len = len(words)
     return waveform, words, model, tokenizer, words_len
 
@@ -180,56 +183,49 @@ def get_emission(waveform: Tensor, model: torch.nn.Module, device: torch.device)
 
 
 
-
-
-def get_mms_embeddings(speech_file, words, device='cpu', **mms_config):
-    
-    
+def get_mms_embeddings(speech_file, words, device='cpu', mms_bundle=None, mms_model=None,
+                       waveform: Tensor = None, **mms_config):
     try:
-        repeat_mms = mms_config['mms_repeat']    
-        with_star = False #True
-        
-        waveform, transcript, model, tokenizer, words_len = prepare_data(speech_file, words, with_star, device) 
-        
+        repeat_mms = mms_config['mms_repeat']
+        with_star = False
+
+        waveform, transcript, model, tokenizer, words_len = prepare_data(
+            speech_file, words, with_star, device,
+            bundle=mms_bundle, model=mms_model, waveform=waveform)
+
         if words_len == 0:
             raise Exception(f"words length equal zero for mms: {transcript}")
-        else:
-            emission = get_emission(waveform, model, device)
-            
-            
-            bundle = torchaudio.pipelines.MMS_FA
-            tokenizer = bundle.get_tokenizer()
-            
-            
-            aligner = ForceAligner(blank=0, tokenizer=tokenizer)
-            words_spans = aligner(emission[0], tokenizer(transcript.split()), return_as_words=True)
-            
-            # print(words_spans)
-            
-            confidents = [i.score for i in words_spans]
-            end_times = [i.end for i in words_spans]
-            
-            end_times_divide = [int(round(end_time_i *2)) for end_time_i in end_times]
-            length_confidents = end_times_divide[-1]
-            mms_confidents = np.zeros(length_confidents).astype(float)
 
-            for item1, item2 in zip(end_times_divide, confidents):
-                mms_confidents[(item1)-1] = item2
-                mms_confidents[(item1)-2] = item2
-            
-            expanded_mms_confidents = np.repeat(mms_confidents[:, np.newaxis], repeat_mms, axis=1)
-            
-            return expanded_mms_confidents
-            
+        emission = get_emission(waveform, model, device)
+
+        aligner = ForceAligner(blank=0, tokenizer=tokenizer)
+        words_spans = aligner(emission[0], tokenizer(transcript.split()), return_as_words=True)
+
+        confidents = [i.score for i in words_spans]
+        end_times = [i.end for i in words_spans]
+
+        end_times_divide = [int(round(end_time_i * 2)) for end_time_i in end_times]
+        length_confidents = end_times_divide[-1]
+        mms_confidents = np.zeros(length_confidents, dtype=np.float64)
+
+        for item1, item2 in zip(end_times_divide, confidents):
+            mms_confidents[item1 - 1] = item2
+            mms_confidents[item1 - 2] = item2
+
+        expanded_mms_confidents = np.repeat(mms_confidents[:, np.newaxis], repeat_mms, axis=1)
+        return expanded_mms_confidents
+
     except Exception as e:
         raise Exception(f'speech file {speech_file} failed for {e}')
 
 
-def extract_file_emissions_token(sentence, transcript_path, device, wav_file):
-    wav_path = wav_file#os.path.splitext(transcript_path)[0] + '.wav'
-    with_star = False  # Set to True if you want to use the 'star' option in the tokenizer
-    waveform, transcript, model, tokenizer, words_len = prepare_data(wav_path, sentence, with_star, device)
-    bundle = torchaudio.pipelines.MMS_FA
+def extract_file_emissions_token(sentence, transcript_path, device, wav_file,
+                                 mms_bundle=None, mms_model=None, waveform: Tensor = None):
+    with_star = False
+    waveform, transcript, model, tokenizer, words_len = prepare_data(
+        wav_file, sentence, with_star, device,
+        bundle=mms_bundle, model=mms_model, waveform=waveform)
+    bundle = mms_bundle if mms_bundle is not None else torchaudio.pipelines.MMS_FA
     labels = bundle.get_labels()
     tokens = transcript.split()
     dictionary = {label: idx for idx, label in enumerate(labels)}

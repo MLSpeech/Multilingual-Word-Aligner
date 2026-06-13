@@ -7,6 +7,9 @@ import time
 from inference.models.predict import get_file_prediction
 from inference.results_utils.graphs import extract_graphs, save_results_to_csv, save_results_to_textgrid
 from inference.models.utils import prepare_sentence, find_fit_transcript, load_model
+from inference.models.mms.mms import load_mms_model
+from inference.models.unsupSeg.unsupseg_classifier import load_unsupseg_model
+from inference.models.dp_algorithm.extract_features import Features_DP
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -22,6 +25,20 @@ def align():
     model = load_model(**configuration)
     model_name = configuration.get('model_name') or configuration.get('model_path') or 'model'
     print(f"Loaded model: {model_name}")
+
+    print("Loading MMS model...")
+    mms_bundle, mms_model = load_mms_model(configuration['device'])
+    configuration['mms_bundle'] = mms_bundle
+    configuration['mms_model'] = mms_model
+
+    print("Loading UnsupSeg model...")
+    unsupseg_ckpt = os.path.join(inference.configuration.constants.INFERENCE_PART_DIR,
+                                 configuration['unsupseg_ckpt'])
+    configuration['unsupseg_model'] = load_unsupseg_model(unsupseg_ckpt, configuration['device'])
+
+    # Pre-build DP objects once; reused across all files
+    configuration['_dp_features_obj'] = Features_DP(configuration['dp_features'])
+    configuration['_w_floats'] = list(configuration['w'])
 
     file_times = []
     total_start = time.time()

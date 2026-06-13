@@ -1,8 +1,6 @@
 import inference.configuration.constants as constants
 import numpy as np
-from dataclasses import dataclass, field
-from typing import List, Optional, Callable
-# from forcedAlignment.utils.constants import models_configurations, LABELS_DIR, TRAIN_FILES, TIMIT, DATASETS_MAPPING, DATASET
+import torchaudio
 from inference.models.mms.mms import get_mms_embeddings
 from inference.models.unsupSeg.unsupseg_classifier import get_unsupseg_embeddings
 from inference.models.utils import prepare_sentence
@@ -84,23 +82,35 @@ def pad_and_batch_transformer_and_conformer(final_embedding, sequence_size=200):
 
 
 def prepare_dataset(**model_arguments):
-    speech_files = model_arguments['wav_file']
-    transcript_file = model_arguments['transcript_file']#input_file.replace(".wav",".wrd")
+    speech_file = model_arguments['wav_file']
+    transcript_file = model_arguments['transcript_file']
     words = prepare_sentence(transcript_file, language=model_arguments['language'])
-    mms_confidents = get_mms_embeddings(speech_files, words, device=model_arguments['device'] , mms_repeat = model_arguments['mms_repeat'])
-    checkpoint_location = os.path.join(constants.INFERENCE_PART_DIR,model_arguments['unsupseg_ckpt'])
-    UnsupSeg_cnn_represenataion = get_unsupseg_embeddings(checkpoint_location , speech_files, model_arguments['device'])
+
+    # Load waveform once; share with extract_file_emissions_token later
+    waveform, _ = torchaudio.load(speech_file)
+    model_arguments['_waveform'] = waveform
+
+    mms_confidents = get_mms_embeddings(
+        speech_file, words,
+        device=model_arguments['device'],
+        mms_bundle=model_arguments.get('mms_bundle'),
+        mms_model=model_arguments.get('mms_model'),
+        waveform=waveform,
+        mms_repeat=model_arguments['mms_repeat'],
+    )
+    unsupseg_input = model_arguments.get('unsupseg_model') or \
+        os.path.join(constants.INFERENCE_PART_DIR, model_arguments['unsupseg_ckpt'])
+    UnsupSeg_cnn_represenataion = get_unsupseg_embeddings(unsupseg_input, speech_file, model_arguments['device'])
     if not isinstance(UnsupSeg_cnn_represenataion, np.ndarray):
         UnsupSeg_cnn_represenataion = UnsupSeg_cnn_represenataion.cpu().detach().numpy()
 
-    # Cutting all vectors to minimal sized vector
     min_embedd_shape = min(mms_confidents.shape[0], UnsupSeg_cnn_represenataion.shape[0])
     mms_confidents = mms_confidents[:min_embedd_shape]
     UnsupSeg_cnn_represenataion = UnsupSeg_cnn_represenataion[:min_embedd_shape]
-    
+
     norm_UnsupSeg_cnn_represenataion = contrast_normalization(UnsupSeg_cnn_represenataion)
-            
     final_embedding = np.hstack((norm_UnsupSeg_cnn_represenataion, mms_confidents))
-    final_embedding_batches, mask_batches = pad_and_batch_transformer_and_conformer(final_embedding, sequence_size=model_arguments['sequence_size'])
+    final_embedding_batches, mask_batches = pad_and_batch_transformer_and_conformer(
+        final_embedding, sequence_size=model_arguments['sequence_size'])
     return final_embedding_batches, mask_batches
     
