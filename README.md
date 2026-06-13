@@ -3,6 +3,8 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![PyTorch 2.4](https://img.shields.io/badge/PyTorch-2.4-ee4c2c.svg)](https://pytorch.org/)
 [![HuggingFace Models](https://img.shields.io/badge/🤗-Models-yellow)](https://huggingface.co/MLSpeech)
+[![arXiv](https://img.shields.io/badge/arXiv-2606.10675-b31b1b.svg)](https://arxiv.org/abs/2606.10675)
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
 ---
 
