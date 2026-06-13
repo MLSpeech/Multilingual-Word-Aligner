@@ -1,6 +1,14 @@
 # MWA — Multilingual Word Aligner
 
-> State-of-the-art open-source speech–text word alignment for 1000+ languages.
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
+[![PyTorch 2.4](https://img.shields.io/badge/PyTorch-2.4-ee4c2c.svg)](https://pytorch.org/)
+[![HuggingFace Models](https://img.shields.io/badge/🤗-Models-yellow)](https://huggingface.co/MLSpeech)
+
+---
+
+> ### **State-of-the-art open-source speech–text word alignment for 1000+ languages.**
+
+---
 
 ## Citation
 
@@ -11,16 +19,12 @@ Roy Weber, Meidan Zehavi, Rotem Rousso, Joseph Keshet
 *The 27th Annual Conference of the International Speech Communication Association (Interspeech), 2026*  
 [https://arxiv.org/abs/2606.10675](https://arxiv.org/abs/2606.10675)
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
-[![PyTorch 2.4](https://img.shields.io/badge/PyTorch-2.4-ee4c2c.svg)](https://pytorch.org/)
-[![HuggingFace Models](https://img.shields.io/badge/🤗-Models-yellow)](https://huggingface.co/MLSpeech)
-
 ---
 
 ## What is MWA?
 
 MWA maps spoken audio to its transcript at the **word level**, producing a
-precise start and end timestamp for every word. It works for read speech, 
+precise start and end timestamp for every word. It works for read speech,
 conversational speech, and languages never seen during training.
 
 MWA outperforms all leading speech–text aligners on the TIMIT and Buckeye
@@ -75,9 +79,31 @@ Audio + Transcript
 
 Both models were trained on American English corpora but leverage MMS-FA
 features, enabling alignment for all **1000+ languages** supported by MMS.
-See [Supported Languages](#supported-languages) below for the full list.
 
 Weights are downloaded automatically from HuggingFace on first use.
+
+---
+
+## Supported Languages
+
+MWA supports all **1000+ languages** covered by Meta's MMS model. For the
+full list of languages and their ISO 639-3 codes, see the official MMS
+language list:
+
+**[MMS supported languages and codes](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html)**
+
+> **Note:** MWA only requires MMS's **Language Identification (LID)** support,
+> not full ASR support. This means any language listed under LID in the MMS
+> coverage table is supported — a much broader set than the ASR-only languages.
+
+MWA uses [uroman](https://github.com/isi-nlp/uroman) to romanize non-Latin
+scripts automatically. Pass the ISO 639-3 code via `--language`.
+
+**Example languages:** English (eng), Spanish (spa), French (fra), German (deu),
+Arabic (ara), Hindi (hin), Mandarin Chinese (cmn), Japanese (jpn), Russian (rus),
+Portuguese (por), Italian (ita), Dutch (nld), Korean (kor), Turkish (tur),
+Polish (pol), Swedish (swe), Hebrew (heb), Persian (fas), Vietnamese (vie),
+Swahili (swh), ...
 
 ---
 
@@ -108,6 +134,103 @@ source Mwa_venv/bin/activate        # Linux / macOS
 
 pip install -r requirements.txt
 pip install -e .
+```
+
+---
+
+## Usage
+
+### Simple CLI
+
+```bash
+mwa align <model_name> [language] --input_dir <path> --output_dir <path>
+```
+
+```bash
+# Align all files in a directory (English, conversational)
+mwa align buckeye eng --input_dir ./data/ --output_dir ./results/
+
+# Language defaults to 'eng' when omitted
+mwa align timit --input_dir ./data/ --output_dir ./results/
+```
+
+### Full `align_wav.py` interface
+
+```bash
+python align_wav.py \
+    --wav_input        /path/to/audio/       \
+    --transcript_input /path/to/transcripts/ \
+    --language         eng                   \
+    --model_name       buckeye               \
+    --device           cuda:0                \
+    --output_folder    ./results/
+```
+
+### All arguments
+
+| Argument | Type | Default | Description |
+|---|---|---|---|
+| `--wav_input` | path | — | `.wav`/`.flac` file **or** directory of audio files |
+| `--transcript_input` | path | — | `.txt`/`.TextGrid` file **or** directory of transcript files |
+| `--language` | str | `eng` | ISO 639-3 language code (see [Supported Languages](#supported-languages)) |
+| `--model_name` | str | `timit` | Pretrained model: `timit` or `buckeye` |
+| `--device` | str | `cpu` | PyTorch device: `cpu`, `cuda:0`, `cuda:1`, … |
+| `--output_folder` | path | — | Output directory (created automatically if missing) |
+| `--no_graph` | flag | off | Suppress PNG visualisation output |
+| `--no_csv` | flag | off | Suppress CSV and TextGrid output |
+
+---
+
+## Data Preparation
+
+Organise your files so that each audio file has a matching transcript with
+the **same base name**:
+
+```
+dataset/
+├── interview_01.wav
+├── interview_01.txt        ← plain text, one utterance per line
+├── lecture_02.flac
+├── lecture_02.TextGrid     ← Praat TextGrid with a "sentence" tier
+└── ...
+```
+
+**Transcript formats**
+
+| Format | Rules |
+|---|---|
+| `.txt` | One sentence per file; words separated by spaces |
+| `.TextGrid` | Praat format; must contain a tier named `sentence` |
+
+**Audio requirements:** `.wav` or `.flac`, **16 kHz** sample rate.
+
+---
+
+## Output Reference
+
+| File | Contents |
+|---|---|
+| `<name>.csv` | `Word, Start_Time, End_Time` — one row per word, times in seconds |
+| `<name>.TextGrid` | Praat TextGrid with a `words` interval tier |
+| `<name>_graph1.png` | Waveform (top) and frame-level boundary probabilities (bottom) with DP boundaries overlaid in blue and Conformer predictions in green |
+
+---
+
+## GPU Acceleration
+
+Pass `--device cuda:0` to move all models to GPU. This is strongly recommended
+for large batches. All three models (MMS, UnsupSeg, Conformer) are loaded
+**once** at startup and shared across every file in the batch, so per-file
+cost is pure inference with no reload overhead.
+
+```bash
+python align_wav.py \
+    --wav_input        /data/corpus/ \
+    --transcript_input /data/corpus/ \
+    --language         eng           \
+    --model_name       buckeye       \
+    --device           cuda:0        \
+    --output_folder    ./results/
 ```
 
 ---
@@ -187,120 +310,8 @@ one labelled interval per word.
 
 ---
 
-## Usage
-
-### Simple CLI
-
-```bash
-mwa align <model_name> [language] --input_dir <path> --output_dir <path>
-```
-
-```bash
-# Align all files in a directory (English, conversational)
-mwa align buckeye eng --input_dir ./data/ --output_dir ./results/
-
-# Language defaults to 'eng' when omitted
-mwa align timit --input_dir ./data/ --output_dir ./results/
-```
-
-### Full `align_wav.py` interface
-
-```bash
-python align_wav.py \
-    --wav_input        /path/to/audio/       \
-    --transcript_input /path/to/transcripts/ \
-    --language         eng                   \
-    --model_name       buckeye               \
-    --device           cuda:0                \
-    --output_folder    ./results/
-```
-
-### All arguments
-
-| Argument | Type | Default | Description |
-|---|---|---|---|
-| `--wav_input` | path | — | `.wav`/`.flac` file **or** directory of audio files |
-| `--transcript_input` | path | — | `.txt`/`.TextGrid` file **or** directory of transcript files |
-| `--language` | str | `eng` | ISO 639-3 language code (see [Supported Languages](#supported-languages)) |
-| `--model_name` | str | `timit` | Pretrained model: `timit` or `buckeye` |
-| `--device` | str | `cpu` | PyTorch device: `cpu`, `cuda:0`, `cuda:1`, … |
-| `--output_folder` | path | — | Output directory (created automatically if missing) |
-| `--no_graph` | flag | off | Suppress PNG visualisation output |
-| `--no_csv` | flag | off | Suppress CSV and TextGrid output |
-
----
-
-## Data Preparation
-
-Organise your files so that each audio file has a matching transcript with
-the **same base name**:
-
-```
-dataset/
-├── interview_01.wav
-├── interview_01.txt        ← plain text, one utterance per line
-├── lecture_02.flac
-├── lecture_02.TextGrid     ← Praat TextGrid with a "sentence" tier
-└── ...
-```
-
-**Transcript formats**
-
-| Format | Rules |
-|---|---|
-| `.txt` | One sentence per file; words separated by spaces |
-| `.TextGrid` | Praat format; must contain a tier named `sentence` |
-
-**Audio requirements:** `.wav` or `.flac`, **16 kHz** sample rate.
-
----
-
-## Supported Languages
-
-MWA uses [uroman](https://github.com/isi-nlp/uroman) to romanize non-Latin
-scripts before passing them to MMS. Use the ISO 639-3 code for `--language`.
-
-MWA supports all **1000+ languages** covered by Meta's MMS model. For the
-full list of languages and their ISO 639-3 codes, see the official MMS
-language list:
-
-**[MMS supported languages and codes](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html)**
-
----
-
-## GPU Acceleration
-
-Pass `--device cuda:0` to move all models to GPU. This is strongly recommended
-for large batches. All three models (MMS, UnsupSeg, Conformer) are loaded
-**once** at startup and shared across every file in the batch, so per-file
-cost is pure inference with no reload overhead.
-
-```bash
-python align_wav.py \
-    --wav_input        /data/corpus/ \
-    --transcript_input /data/corpus/ \
-    --language         eng           \
-    --model_name       buckeye       \
-    --device           cuda:0        \
-    --output_folder    ./results/
-```
-
----
-
-## Output Reference
-
-| File | Contents |
-|---|---|
-| `<name>.csv` | `Word, Start_Time, End_Time` — one row per word, times in seconds |
-| `<name>.TextGrid` | Praat TextGrid with a `words` interval tier |
-| `<name>_graph1.png` | Waveform (top) and frame-level boundary probabilities (bottom) with DP boundaries overlaid in blue and Conformer predictions in green |
-
----
-
 ## Acknowledgements
 
-MWA builds on:
-
-- **MMS** — Pratap et al., *Scaling Speech Technology to 1,000+ Languages*, 2023. Facebook AI Research.  
-- **UnsupSeg** — Kreuk, Keshet & Adi, *Self-Supervised Contrastive Learning for Unsupervised Phoneme Segmentation*, Interspeech 2020.
-
+This work was supported by NSF DRL Grant No. 2219843 and
+BSF Grant No. 2022618. We also thank Rob van Son for his
+guidance and support with the IFA Corpus.
